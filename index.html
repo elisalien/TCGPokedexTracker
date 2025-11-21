@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pokédex TCG — v3.8.0 (Glasscore)</title>
+  <link rel="stylesheet" href="assets/styles.css?v=3.8.0" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar glass" aria-label="Navigation">
+      <div class="brand">
+        <div class="dot"></div>
+        <span>Pokédex TCG</span>
+      </div>
+      <nav id="regionNav" class="region-nav" role="tablist" aria-orientation="vertical">
+        <button role="tab" aria-selected="true">Kanto</button>
+        <button role="tab">Johto</button>
+        <button role="tab">Hoenn</button>
+        <button role="tab">Sinnoh</button>
+        <button role="tab">Unys</button>
+        <button role="tab">Kalos</button>
+        <button role="tab">Alola</button>
+        <button role="tab">Galar</button>
+        <button role="tab">Hisui</button>
+        <button role="tab">Paldea</button>
+        <button role="tab">Dashboard</button>
+      </nav>
+      <div class="sidebar-foot">
+        <button class="btn ghost" id="scrollTopBtn">↑ Haut</button>
+        <button class="btn ghost" id="resetAll">Réinit. tout</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="toolbar" aria-label="Outils">
+        <div class="left">
+          <h1 id="title">Kanto</h1>
+          <div class="subtle" id="subtitle">Coche Reverse pour prioriser l'holo (Classique se décoche).</div>
+        </div>
+        <div class="right actions" id="actionsBar">
+          <div class="field">
+            <input id="search" type="text" placeholder="Rechercher (#, nom, set, note...)" aria-label="Rechercher" />
+          </div>
+          <div class="filters" id="filters">
+            <button class="chip" data-filter="all" aria-pressed="true">Tout</button>
+            <button class="chip" data-filter="owned">Cochés</button>
+            <button class="chip" data-filter="missing">Manquants</button>
+            <button class="chip" data-filter="classic">Classique</button>
+            <button class="chip" data-filter="reverse">Reverse</button>
+          </div>
+          <div class="sep"></div>
+          <div id="bulkActions" class="bulk" style="display:none">
+            <span class="badge" id="selCount">0</span>
+            <select id="bulkLang" title="Langue">
+              <option value="">— Langue —</option>
+              <option>JP</option><option>EN</option><option>FR</option><option>IT</option><option>KR</option><option>CN</option>
+            </select>
+            <input id="bulkSet" type="text" placeholder="Série / Set..." list="setList" title="Série / Set"/>
+            <input id="bulkNotes" type="text" placeholder="Notes (tags, virgules)" list="notesList" title="Notes (tags)"/>
+            <label class="mini"><input id="bulkNotesReplace" type="checkbox"/> Remplacer</label>
+            <select id="bulkClassic" title="Classique">
+              <option value="">Classique —</option>
+              <option value="on">ON</option>
+              <option value="off">OFF</option>
+            </select>
+            <select id="bulkReverse" title="Reverse">
+              <option value="">Reverse —</option>
+              <option value="on">ON</option>
+              <option value="off">OFF</option>
+            </select>
+            <button class="btn" id="applyBulk">Appliquer</button>
+            <button class="btn ghost" id="clearSel">Effacer</button>
+          </div>
+          <div class="sep"></div>
+          <label class="btn" for="importJson"><input id="importJson" type="file" accept="application/json" hidden />Importer</label>
+          <button class="btn" id="loadOfflineBtn">Charger noms FR (offline)</button>
+          <button class="btn" id="exportBtn">Exporter</button>
+        </div>
+      </header>
+
+      <datalist id="notesList"></datalist>
+      <datalist id="setList"></datalist>
+
+      <section class="panel glass table-panel" id="regionView">
+        <header class="panel-head sticky">
+          <div class="columns">
+            <div class="col sel center">Sel</div>
+            <div class="col num">#</div>
+            <div class="col name">Nom</div>
+            <div class="col center">Classique</div>
+            <div class="col center">Reverse</div>
+            <div class="col lang">Langue</div>
+            <div class="col set">Série / Set</div>
+            <div class="col notes">Notes (tags)</div>
+          </div>
+        </header>
+        <div id="rows" class="rows" role="table" aria-label="Liste Pokémon"></div>
+        <footer class="panel-foot subtle" id="progress"></footer>
+      </section>
+
+      <section class="panel glass dash-panel" id="dashboardView" hidden>
+        <div class="dash-grid">
+          <section class="card glass span2">
+            <h2>Résumé global</h2>
+            <div class="kpis">
+              <div class="kpi glass"><div class="label">Classique (☑)</div><div class="value" id="gClassic">0</div></div>
+              <div class="kpi glass"><div class="label">Reverse (☑)</div><div class="value" id="gReverse">0</div></div>
+              <div class="kpi glass"><div class="label">Total cochées</div><div class="value" id="gAny">0</div></div>
+              <div class="kpi glass"><div class="label">Total</div><div class="value" id="gTotal">1025</div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-bar"><div id="gProgressFill"></div></div>
+              <div class="progress-text" id="gProgressText">0%</div>
+            </div>
+          </section>
+
+          <section class="card glass">
+            <h2>Holo / Reverse par langue</h2>
+            <div class="lang-stats" id="gReverseByLang"></div>
+          </section>
+          <section class="card glass">
+            <h2>Classique par langue</h2>
+            <div class="lang-stats" id="gClassicByLang"></div>
+          </section>
+
+          <section class="card glass span2">
+            <h2>Progression par région (cochées)</h2>
+            <div id="regionProgress" class="region-progress"></div>
+          </section>
+          <section class="card glass span2">
+            <h2>Reverse par région (holo)</h2>
+            <div id="reverseRegionProgress" class="region-progress"></div>
+          </section>
+
+          <section class="card glass">
+            <h2>Répartition par types (cochées)</h2>
+            <div id="typeDistAny" class="type-dist"></div>
+          </section>
+          <section class="card glass">
+            <h2>Répartition par types (reverse)</h2>
+            <div id="typeDistRev" class="type-dist"></div>
+          </section>
+
+          <section class="card glass span2">
+            <h2>Objectifs 100% Reverse</h2>
+            <div id="goalsReverse" class="region-progress"></div>
+          </section>
+
+          <section class="card glass">
+            <h2>Top des sets saisis (cartes cochées)</h2>
+            <div id="topSets" class="top-list"></div>
+          </section>
+          <section class="card glass">
+            <h2>Top des tags (cartes cochées)</h2>
+            <div id="topTagsAny" class="top-list"></div>
+          </section>
+          <section class="card glass">
+            <h2>Top des tags (reverse)</h2>
+            <div id="topTagsRev" class="top-list"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="assets/app.js?v=3.8.0"></script>
+</body>
+</html>
